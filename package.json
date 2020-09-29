@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.19.0",
+    "bwip-js": "^2.0.10",
     "canvas": "^2.6.1",
     "cors": "^2.8.5",
     "csvtojson": "^2.0.10",

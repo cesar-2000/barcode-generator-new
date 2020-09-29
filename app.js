@@ -5,10 +5,16 @@ var multer = require('multer');
 var fs = require('fs');
 var cors = require('cors');
 const csv = require('csvtojson');
+// const bwipjs = require('bwip-js');
 var zip = require('express-zip');
+const path = require('path');
+
 var JsBarcode = require('jsbarcode');
 var Canvas = require("canvas");
 var canvas = new Canvas.Canvas();
+
+var barcodeJson = []; // from csv file
+var barcodeFiles = []; // generate barcode as png file
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -36,14 +42,12 @@ var upload = multer({
     }
 }).single('file');
 
-var barcodeJson = []; // from csv file
-var barcodeFiles = []; // generate barcode as png file
-
 /** API path that will upload the files */
 app.post('/upload', function (req, res) {
     console.log('csv file upload requesting...')
     barcodeJson = [];
     var tempBarcodeJson = [];
+
 
     upload(req, res, function (err) {
         if (err) {
@@ -99,44 +103,28 @@ app.post('/upload', function (req, res) {
 
 });
 
-var deleteFiles = async () => {
-    return new Promise((resolve, reject) => {
-        if (barcodeFiles.length) {
-            console.log('Deleting barcode images started...');
-            barcodeFiles.forEach((element, i) => {
-                fs.unlink(element.path, function (err) {
-                    if (err) {
-                        console.log('no such file or directory...', err);
-                        reject(err)
-                    }
-                    console.log(`${i} -- File deleted..`);
-                })
-            });
-            console.log('Deleting barcode images finished...');
+app.get('/generate', function (req, res) {
+    console.log('generating barcode is started...')
 
-            barcodeFiles = [];
-            resolve();
-        } else {
-            console.log('barcodeFiles length == 0')
-            resolve();
-        }
-    })
-
-}
-
-app.get('/generate', async function (req, res) {
     if (!barcodeJson.length) {
         res.json({ error_code: 1, err_desc: "Please upload csv file" });
         return;
     }
 
-    console.log('barcodeFiles length before>>>', barcodeFiles.length)
+    if (barcodeFiles.length) {
+        console.log('Deleting barcode images started...');
+        barcodeFiles.forEach(element => {
+            fs.unlink(element.path, function (err) {
+                if (err) return console.log('no such file or directory...', err);
+                console.log('File deleted..');
+            })
+            // fs.unlinkSync(element.path); // Deleting the barcode png
+        });
+        console.log('Deleting barcode images finished...');
 
-    await deleteFiles();
-    
-    console.log('barcodeFiles length after>>>', barcodeFiles.length)
+        barcodeFiles = [];
+    }
 
-    console.log('generating barcode is started...')
 
     barcodeJson.forEach((element, index) => {
         console.log(index, ' element>>>', element)
@@ -180,6 +168,11 @@ app.get('/download', function (req, res) {
 
     console.log('download api is finished');
 });
+
+app.get('/test', function (req, res) {
+    console.log('test api is working');
+    res.json({ error_code: 0, err_desc: null, message: "test api is working fine" });
+})
 
 app.get('/key/:keyid/type/:typeid/value/:valueid', function (req, res) {
     if (req.params.keyid == 'deuyfjdhfd3') {
