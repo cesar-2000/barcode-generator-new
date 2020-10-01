@@ -5,16 +5,12 @@ var multer = require('multer');
 var fs = require('fs');
 var cors = require('cors');
 const csv = require('csvtojson');
-// const bwipjs = require('bwip-js');
 var zip = require('express-zip');
 const path = require('path');
 
 var JsBarcode = require('jsbarcode');
 var Canvas = require("canvas");
 var canvas = new Canvas.Canvas();
-
-var barcodeJson = []; // from csv file
-var barcodeFiles = []; // generate barcode as png file
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -42,13 +38,15 @@ var upload = multer({
     }
 }).single('file');
 
+var barcodeJson = []; // from csv file
+var barcodeFiles = []; // generate barcode as png file
+
 /** API path that will upload the files */
 app.post('/upload', function (req, res) {
     console.log('csv file upload requesting...')
     barcodeJson = [];
     var tempBarcodeJson = [];
-
-
+    
     upload(req, res, function (err) {
         if (err) {
             res.json({ error_code: 1, err_desc: err });
@@ -125,18 +123,21 @@ app.get('/generate', function (req, res) {
         barcodeFiles = [];
     }
 
-
     barcodeJson.forEach((element, index) => {
         console.log(index, ' element>>>', element)
         let value = element['type;value'].split(';');
         let type = value[0];
         let data = value[1];
 
-        if (type === 'ean13') {
-            data = data.substr(1);
-        }
-
         // Using JSBarcode npm package
+        JsBarcode(canvas, data, {
+            valid: (valid) => {
+                if(valid === false) type = "code128";
+            },
+            format: type,
+            displayValue: true
+        });
+        
         JsBarcode(canvas, data, {
             format: type,
             displayValue: true
@@ -172,7 +173,7 @@ app.get('/download', function (req, res) {
 app.get('/test', function (req, res) {
     console.log('test api is working');
     res.json({ error_code: 0, err_desc: null, message: "test api is working fine" });
-})
+});
 
 app.get('/key/:keyid/type/:typeid/value/:valueid', function (req, res) {
     if (req.params.keyid == 'deuyfjdhfd3') {
@@ -184,11 +185,15 @@ app.get('/key/:keyid/type/:typeid/value/:valueid', function (req, res) {
             let type = typeid;
             let data = valueid;
             
-            if (type === 'ean13') {
-               data = data.substr(1);
-            }
-            
             // Using JSBarcode npm package
+            JsBarcode(canvas, data, {
+                valid: (valid) => {
+                    if(valid === false) type = "code128";
+                },
+                format: type,
+                displayValue: true
+            });
+
             JsBarcode(canvas, data, {
                 format: type,
                 displayValue: true
