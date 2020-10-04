@@ -131,16 +131,15 @@ app.get('/generate', function (req, res) {
 
         // Using JSBarcode npm package
         JsBarcode(canvas, data, {
+            format: type,
+            displayValue: true,
             valid: (valid) => {
                 if(valid === false) type = "code128";
-            },
-            format: type,
-            displayValue: true
-        });
-        
-        JsBarcode(canvas, data, {
-            format: type,
-            displayValue: true
+                JsBarcode(canvas, data, {
+                    format: type,
+                    displayValue: true
+                });
+            }
         });
 
         const buffer = canvas.toBuffer('image/png');
@@ -187,17 +186,16 @@ app.get('/key/:keyid/type/:typeid/value/:valueid', function (req, res) {
             
             // Using JSBarcode npm package
             JsBarcode(canvas, data, {
-                valid: (valid) => {
-                    if(valid === false) type = "code128";
-                },
-                format: type,
-                displayValue: true
-            });
-
-            JsBarcode(canvas, data, {
-                format: type,
-                displayValue: true
-            });
+				format: type,
+				displayValue: true,
+				valid: (valid) => {
+					if(valid === false) type = "code128";
+					JsBarcode(canvas, data, {
+						format: type,
+						displayValue: true
+					});
+				}
+			});
             
             const buffer = canvas.toBuffer('image/png');
             
